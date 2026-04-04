@@ -34,21 +34,28 @@ export default function Reporte() {
 
   async function loadExisting() {
     setLoading(true)
-    const { data } = await supabase
-      .from('reportes').select('*')
-      .eq('user_id', session.user.id).eq('fecha', todayStr).single()
-    if (data) {
-      setActivities({ meditacion: data.meditacion, entrenamiento: data.entrenamiento, correr: data.correr, lectura: data.lectura, ayuno: data.ayuno })
-      setNotas(data.notas || '')
-      setPeso(data.peso ? String(data.peso) : '')
-      setAltura(data.altura ? String(data.altura) : '')
-      setFotos({
-        meditacion_foto: data.meditacion_foto || null,
-        entrenamiento_foto: data.entrenamiento_foto || null,
-        correr_foto: data.correr_foto || null,
-      })
+    try {
+      const { data, error } = await supabase
+        .from('reportes').select('*')
+        .eq('user_id', session.user.id).eq('fecha', todayStr)
+        .maybeSingle()
+      if (error) throw error
+      if (data) {
+        setActivities({ meditacion: !!data.meditacion, entrenamiento: !!data.entrenamiento, correr: !!data.correr, lectura: !!data.lectura, ayuno: !!data.ayuno })
+        setNotas(data.notas || '')
+        setPeso(data.peso ? String(data.peso) : '')
+        setAltura(data.altura ? String(data.altura) : '')
+        setFotos({
+          meditacion_foto: data.meditacion_foto || null,
+          entrenamiento_foto: data.entrenamiento_foto || null,
+          correr_foto: data.correr_foto || null,
+        })
+      }
+    } catch (err) {
+      console.error('loadExisting error:', err)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const handleChange = (key, value) => {
